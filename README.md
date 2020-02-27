@@ -2,7 +2,7 @@
 
 Sample code containes various samples of coding from data driven projects including:
 
-- Loan Disbursement Analysis using Vector Autoregression
+- Loan Disbursement Analysis using Vector Autoregression and Timeseries
 - Fuzzy Mathing application to mapping loan operations to Country Strategy Objectives
 - Growth Accounting Analysis
 - Social Network Analysis applied to loans
@@ -11,3 +11,4 @@ Sample code containes various samples of coding from data driven projects includ
 - Transportation related indicators processing and normalization
 - Application of scoring methodology to results data
 - Creation of standarized list of indicators or monitoring of operations
+
