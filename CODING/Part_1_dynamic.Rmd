@@ -1,0 +1,144 @@
+---
+title : 'Part 1: Technical Assessment (Dynamic Version)'
+author: "Andreina Varady"
+date: "2/22/2018"
+output: html_document
+
+
+---
+<br>
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+####
+# Note to user: please make sure packages to be loaded are installed
+####
+
+```
+
+```{r data, cache=FALSE, include=FALSE}
+
+#load packages
+library(tidyverse)
+library(WDI)
+library (plotly)
+
+
+#define indicator to download
+ind <- c ('SH.STA.ACSN') # access to improved water services (%)
+
+#download data using WDI package
+data <- WDI(indicator = ind,
+            country = 'all',
+            extra = TRUE,
+            start = 1960,
+            end = 2016)
+
+#data wrangling
+#create dataframe containing variables for plot
+df <- data %>%
+  
+  #select only variables of interest
+  select (iso2c,
+          country,
+          year,
+          SH.STA.ACSN,
+          region,
+          income) %>%
+  
+  #drop missing from observations
+  filter (!is.na (SH.STA.ACSN)) %>%
+  #drop regional averages (income = na) and only keep country data
+  filter (!is.na(income)) %>%
+  #drop income category "not classified"
+  filter (income != "Not classified") %>%
+  
+  #group by year and income group
+  group_by (income, year) %>%
+  #create new variable: avg. income by group
+  summarise (avg_income = mean (SH.STA.ACSN, na.rm = TRUE)) %>%
+  ungroup()
+
+```
+
+
+#### Graph
+*The graph describes the yearly average change in access to improved water services, by income group, across 25 years of data*
+
+
+```{r indicator evolution in time, fig.align='center', echo = FALSE, results='hide'}
+
+#graph: plot time trend of variable of interest by income group
+plot <- 
+  df %>%
+  mutate(income = str_wrap(income, width = 10)) %>%
+  ggplot(aes (x = year,
+              y = avg_income,
+              color = income)) +
+  geom_line (size = 1) + 
+  geom_point(size = .05) +
+  theme_minimal() +
+  
+  #add titles
+  ggtitle("Access to improved water services\nby income group (1990-2015)") +
+  ylab("Access (% population)") +
+  xlab("Year") +
+  labs(color = 'Income Group', caption = "Source = World Development Indicators") +
+  
+  #change theme settings
+  theme (legend.direction = "horizontal",  
+        legend.position = "bottom",
+        legend.box = "horizontal",
+        legend.title = element_blank(),
+        legend.text = element_text (size = 7),
+        legend.key.size = unit(1, "cm"),
+        plot.title = element_text(size = 10, 
+                                  face = "bold",
+                                  hjust = 0.5),
+        plot.caption = element_text(size = 7)) +
+  
+  #format x axis scale
+  scale_x_continuous(breaks = round(seq(min(df$year),
+                                        max(df$year), 
+                                        by = 5), 1)) +
+  
+  #format y axis scale
+  scale_y_continuous(breaks = round(seq(min(df$avg_income),
+                                        max(df$avg_income),
+                                        by = 15), 0))
+
+```
+
+
+``` {r dynamic plot, echo = FALSE, warning = FALSE, cache = FALSE, message = FALSE, fig.align='center'}
+
+#create dynamic graph using pplotly
+plot2 <- ggplotly(plot) %>%
+              layout (autosize = F,
+                      width = 800,
+                      height = 450,
+                      xaxis = list (tickangle = 7, title = "Year", titlefont = list(size = 10)),
+                      yaxis = list (title = "Access to improved water (% of pop.)",
+                                    titlefont = list(size = 10)))
+
+#plot graph
+plot2
+
+```
+<style>
+body {
+text-align: justify}
+</style>
+####Analysis
+
+**Access to improved water services (% of population) presents a positive trend across the 6 income groups, between 1990 and 2015**.
+
+The trend is positive, with no evidence of outliers or cyclical shifts. However, when comparing income groups, there is an observable variation in the slope, as well evident differences by level.
+
+The overall pattern indicates that the income group is inversely related to the steepness of the trend line. The lower income groups present a steeper slope (i.e. higher rate of change) compared to countries in the higher income groups (OECD and non-OECD), which present an almost flat trend line (i.e. lower rate of change).
+
+There is also evident differentiation in the levels between income groups, in which the level of the indicator is positively associated with the income group: the lower the income group, the lower the level of the indicator in 1990. In spite of strong progress in access by lower income groups, they are still far from reaching the peers they aspire to be similar to (e.g. high income countries).
+
+Given that this graph only presents averages by group and potentially hides relevant country level differences, one should be cautious before drawing serious conclusions.
