@@ -1,3 +1,4 @@
+#load libraries
 library(dplyr)
 library(tidyr)
 library(lubridate)
@@ -13,13 +14,6 @@ library(vars)
 
 
 ##Model: Vector Autoregressive model used for financial forecasting
-
-###########
-# Example
-###########
-
-data(Canada)
-head(Canada)
 
 ###########
 # Testing

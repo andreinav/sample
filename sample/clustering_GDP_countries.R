@@ -181,8 +181,6 @@ gdp1 %>%
   geom_histogram(bins = 80)
 
 
-
-
 ### Calculate distance between points - distance matrix between all points
 d <- dist(gdp1 %>%
             select(GDPppp), method = 'euclidean')
