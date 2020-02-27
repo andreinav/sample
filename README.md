@@ -11,4 +11,7 @@ Sample code containes various samples of coding from data driven projects includ
 - Transportation related indicators processing and normalization
 - Application of scoring methodology to results data
 - Creation of standarized list of indicators or monitoring of operations
+- Geospatial analysis of rent prices in Lima
+- Application of scoring methodology to results data 2012-2019 (1-3 files).
+- LSMS Malawi data cleaning
 
