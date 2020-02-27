@@ -1,0 +1,18 @@
+{
+    "contents" : "####################\n# Install (if necessary) and load libraries\n####################\n\n# Uncomment the install functions the first time you run the code if you do not have libraries installed \n#install.packages('readstata13')\n#install.packages('dplyr')\n#install.packages('tidyr')\n\nlibrary(readstata13)\nlibrary(dplyr)\nlibrary(tidyr)\n\n\n####################\n# Load the growth_accounting function\n####################\n\nsource('source_function.R')\n\n\n####################\n# Run function with changeable parameters\n####################\n\ngrowth_accounting(file = 'growth_accounting.dta',\n                  \n                  # base year\n                  base_year = 1990,\n                  \n                  # number of years for the steady-state growth rate output\n                  steady_state = 10,\n                  \n                  # number of years to take into account for the Gross fixed capital formation\n                  fixed_capital = 2,\n                  \n                  # this sets the multiple values of depreciation rate of capital (delta) - can be more or less than 3\n                  depreciation = c(0.03, 0.06, 0.08),\n                  \n                  # this sets the multiple values of income of capital (alpha) - can be more or less than 3\n                  income_share = c(0.2, 0.3, 0.4),\n                  \n                  # this sets the name of the output csv file - good for multiple runs\n                  output_name = 'growth_accounting_results.csv')\n",
+    "created" : 1469747100309.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3311626260",
+    "id" : "5ECF9EF8",
+    "lastKnownWriteTime" : 1469757609,
+    "path" : "C:/Users/Juans/Desktop/econ_skills/run_file.R",
+    "project_path" : "run_file.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

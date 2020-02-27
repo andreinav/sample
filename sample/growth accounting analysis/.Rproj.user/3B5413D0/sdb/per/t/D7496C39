@@ -1,0 +1,18 @@
+{
+    "contents" : "\ngrowth_accounting <- function(file, base_year, steady_state, fixed_capital, depreciation, income_share, output_name){\n  \n  # Read the stata file and filter by base year\n  df <-\n    read.dta13(file) %>%\n    filter(year >= base_year)\n  \n  # Calculate average steady_state growth rates by country\n  growth_rates <-\n    df %>%\n    group_by(countryname) %>%\n    arrange(year) %>%\n    slice(1:steady_state) %>%\n    ungroup() %>%\n    mutate(lgfk = log(gfk)) %>%\n    mutate(dgfk = lgfk - lag(lgfk)) %>%\n    group_by(countryname) %>%\n    summarize(g = mean(dgfk, na.rm = TRUE))\n  \n  # Join growth rates to main data frame\n  df <-\n    df %>%\n    left_join(growth_rates, by = 'countryname') %>%\n    arrange(countryname, year)\n  \n  \n  \n  #### Calculate I\n  \n  df$I <- rep(0, nrow(df))\n  \n  for(i in 1:nrow(df)){\n    \n    # Calculate I0\n    if(df$year[i] == base_year){\n      df$I[i] <- mean(df$gfk[i:(i + fixed_capital - 1)], na.rm = TRUE)\n    }\n    \n    # Calculate It\n    else{\n      df$I[i] <- df$gfk[i]\n    }\n    \n  }\n  \n  \n  \n  #### Create combinations for depreciation\n  \n  # This creates a data frame for each value of depreciation, puts them in a list and collapses them into a single df\n  \n  ls <- list()\n  \n  for(i in 1:length(depreciation)){\n    \n    temp <- df\n    temp$delta <- depreciation[i]\n    ls[[i]] <- temp\n    \n  }\n  \n  df <- bind_rows(ls)\n  \n  \n  \n  #### Calculate K\n  \n  df$K <- rep(0, nrow(df))\n  \n  for(i in 1:nrow(df)){\n    \n    # Calculate K0\n    if(df$year[i] == base_year){\n      df$K[i] <- df$I[i] * (df$g[i] + df$delta[i])\n    }\n    \n    # Calculate Kt\n    else{\n      df$K[i] <- df$K[i - 1] * (1 - df$delta[i]) + df$I[i]\n    }\n    \n  }\n  \n  \n  \n  #### Calculate logs, growth rates and returns to education\n  \n  df <-\n    df %>%\n    \n    # logs\n    mutate(lgdp = log(gdp),\n           lpop1564 = log(pop1564),\n           lK = log(K),\n           lyears_sch = log(years_sch)) %>%\n    \n    # growth rates\n    mutate(dlgdp = lgdp - lag(lgdp),\n           dlpop1564 = lpop1564 - lag(lpop1564),\n           dlK = lK - lag(lK),\n           dlyears_sch = lyears_sch - lag(lyears_sch)) %>%\n    \n    # calculate returns to education\n    mutate(red = dlgdp / years_sch)\n  \n  \n  \n  #### Create combinations for alpha (same logic as for delta)\n  \n  ls <- list()\n  \n  for(i in 1:length(income_share)){\n    \n    temp <- df\n    temp$alpha <- income_share[i]\n    ls[[i]] <- temp\n    \n  }\n  \n  df <- bind_rows(ls)\n  \n  \n  \n  #### Calculate TPF and TFPH\n  \n  df <-\n    df %>%\n    mutate(TFP = dlgdp - (alpha * dlK) - ((1 - alpha) * dlpop1564),\n           TFPH = dlgdp - (alpha * dlK) - ((1 - alpha) * dlpop1564) - ((1 - alpha) * red * dlyears_sch))\n  \n  \n  \n  #### Write out results\n  \n  write.csv(df, output_name, row.names = FALSE, na = '0')\n  \n}",
+    "created" : 1469747160740.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2854764438",
+    "id" : "D7496C39",
+    "lastKnownWriteTime" : 1469757764,
+    "path" : "C:/Users/Juans/Desktop/econ_skills/source_function.R",
+    "project_path" : "source_function.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
