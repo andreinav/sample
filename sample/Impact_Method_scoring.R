@@ -3,8 +3,7 @@ install.packages("dplyr")
 install.packages("readr")
 install.packages("readxl")
 install.packages("tidyr")
-#
-#
+
 library(dplyr)
 library(readr)
 library(tidyr)
@@ -79,21 +78,17 @@ TIMS_rating <- read_excel("J:/CSU & CSDR/01_CSDRs/CSDR_code/CSDRs/2019/data_in/C
   
   mutate (i = paste (`Op Id`, `Benchmark ID`, Year, sep ="/")) %>%
   
-  #mutate (check = duplicated(i, incomparables = FALSE))
-  
   distinct (i, .keep_all = TRUE) %>%
   
   ungroup(`Op Id`, `Benchmark ID`, year) %>%
-  
-  #group_by ()
-  #group_by(i) %>%
   
   spread(Year, `Benchmark Rating`, sep = "_") %>%
   
   select (-i) %>%
   
   rename_at (.vars = vars(contains("Year")), 
-             .funs = str_replace, pattern = "Year", replacement = "rating") %>%
+             .funs = str_replace, pattern = "Year",
+             replacement = "rating") %>%
   
   ungroup() 
   
@@ -131,15 +126,13 @@ sample<- read_csv("J:/CSU & CSDR/01_CSDRs/CSDR_code/CSDRs/2019/data_out/sample20
           ReviewQ4)
 
 
-####################
+##################################
 # Create a single database with: 
 # TIMS mapping and TIMS rating
-####################
+##################################
 
 
 temp <- sample %>%
-  
-  #filter (ISO3 == "POL") %>%
   
   left_join (REG_sample2020) %>%
   mutate (ISO3 = ifelse (ISO3 == "REG", 
@@ -148,19 +141,16 @@ temp <- sample %>%
   left_join (TIMS_mapping) %>%
   
   mutate (year_meeting_date = ifelse (Country == "Regional", 
-                                      "not applicable", year_meeting_date)) %>%
+                                      "not applicable",
+                                      year_meeting_date)) %>%
 
   mutate (SOURCE = "TIMS") %>%
   distinct(`Op Id`, `GLOBAL ID`, .keep_all = TRUE) %>%
   
   select (`Op Id`,
           `Op Signing Date`,
-          #ID,
-          #Type,
           Country,
           ISO3,
-          #`CS start year`,
-          #`Description of level`,
           ID_OP,
           `GLOBAL ID`,
           `Benchmark ID`,
@@ -180,26 +170,6 @@ temp <- sample %>%
   filter(`GLOBAL ID` != "SMEFIN") %>%
   filter(`GLOBAL ID` != "TFP") 
 
-
-#####################################
-# Generate a database with the OPS
-# that have missing GLOBAL ID
-#####################################
-
-df_missing_mappingOPS <- temp %>%
-  
-  filter(is.na(`GLOBAL ID`)) %>%
-  
-  distinct(`Op Id`,
-           ISO3) 
-
-temp2 <- temp %>%
-  group_by(`GLOBAL ID`, ISO3) %>%
-  unique() 
-
-#CSDR_IDs_OPS <-  CS_MASTER %>%
-# left_join (temp2)
-
 #####################################
 # Generate a database for TIMS
 #####################################
@@ -207,11 +177,6 @@ temp2 <- temp %>%
 df <- temp %>% 
   
   filter(!is.na(`GLOBAL ID`)) %>%
-
-  
-  #filter (ISO3 == "BGR") %>%
-  #filter (`GLOBAL ID` == "PFIFINRATIO") %>% #
-  #filter (`Benchmark ID` == 34894) %>%
   
   ##convert vars to numeric categorical variables to numeric
   mutate (bench_2013_num = transf(rating_2013, 2013)) %>%
@@ -225,74 +190,53 @@ df <- temp %>%
   
   ##if 2019 has NA but there is a value in previous years, keep NA
   mutate (test =  ifelse (is.na(bench_2018_num) 
-                          &  is.na (bench_2019_num) , NA , "ignore" )) %>%
-  
-  #filter (is.na(test)) %>%
-  
+                          &  is.na (bench_2019_num) ,
+                          NA,
+                          "ignore" )) %>%
+
   mutate (status_TIMS = ifelse (is.na(test) &
-                            !is.na(bench_2016_num),
-                          "completed operation", 
-                          ifelse(is.na(test) &
-                                   !is.na(bench_2015_num),
-                                 "completed operation",
-                                 ifelse(is.na(test) &
-                                          !is.na(bench_2014_num),
-                                        "completed operation",
-                                        ifelse(is.na(test) &
-                                                 !is.na(bench_2013_num),
-                                               "completed operation",
-                                               ifelse(is.na(test) &
-!is.na(bench_2017_num),
-"completed operation",
-"active operation")))))) %>%
+                                  !is.na(bench_2016_num), "completed operation", 
+                                
+                                ifelse(is.na(test) & !is.na(bench_2015_num), "completed operation",
+                                
+                                ifelse(is.na(test) & !is.na(bench_2014_num), "completed operation",
+                                
+                                ifelse(is.na(test) & !is.na(bench_2013_num), "completed operation",
+                                       
+                                ifelse(is.na(test) & !is.na(bench_2017_num), "completed operation",
+                                "active operation")))))) %>%
   
-  
+#########################################################################
 #####Condition 1 :   
-##if both 2018 and 2019 have NA replace with 2 if it is an active operation
-##if it is a completed operation, then keep NA as per instruction to receive not relevant
+##if both 2018 and 2019 have NA; REPLACE with 2 if it is an active operation
+##if it is a completed operation, then KEEP NA as per instruction to receive not relevant
 
 #for active operations
-mutate (bench_2018_num =  ifelse (is.na(bench_2018_num) & 
-is.na(bench_2019_num) &
-status_TIMS == "active operation",
-2,
-bench_2018_num)) %>%
+  mutate (bench_2018_num =  ifelse (is.na(bench_2018_num) &
+                                      is.na(bench_2019_num) &
+                                      status_TIMS == "active operation",
+                                      2, bench_2018_num)) %>%
   
-mutate (bench_2019_num =  ifelse (is.na(bench_2018_num) & 
-is.na(bench_2019_num)&
-status_TIMS == "active operation",
-2, 
-bench_2019_num)) %>%
- 
-###ignore code   
-#    #for completed operations
-#mutate (bench_2018_num =  
-#ifelse (is.na(bench_2018_num) & 
-#is.na(bench_2019_num) &
-#status_TIMS == "completed operation", 
-#2,
-#bench_2018_num )) %>%
-#  
-#mutate (bench_2019_num =  
-#ifelse (is.na(bench_2018_num) & 
-#is.na(bench_2019_num) &
-#status_TIMS == "completed operation", 
-#2,
-#bench_2019_num)) %>%
+  mutate (bench_2019_num =  ifelse (is.na(bench_2018_num) & 
+                                      is.na(bench_2019_num)&
+                                      status_TIMS == "active operation", 2, 
+                                      bench_2019_num)) %>%
+
   
   
 #########################################################################
 #####Condition 2: 
 ##if there is a value for 2019 but NA in 2018, replace 2018 with 2
   
-mutate (bench_2018_num =  ifelse (!is.na(bench_2019_num) &
+  mutate (bench_2018_num =  ifelse (!is.na(bench_2019_num) &
                                   is.na(bench_2018_num), 2,
                                   bench_2018_num)) %>%
 
+#########################################################################
 #####Condition 3: 
 ##if 2019 has a value but 2018 is NA and all before is NA then replace 2018 with 2
 
-mutate (bench_2018_num =  ifelse (!is.na(bench_2019_num) 
+  mutate (bench_2018_num =  ifelse (!is.na(bench_2019_num) 
                                     &  is.na(bench_2017_num) 
                                     &  is.na(bench_2016_num) 
                                     &  is.na(bench_2015_num) 
@@ -301,6 +245,7 @@ mutate (bench_2018_num =  ifelse (!is.na(bench_2019_num)
                                     &  is.na(bench_2018_num), 2,
                                     bench_2018_num )) %>%
 
+#########################################################################
 ##Condition 4:
 ##if 2018 has a value different that 2 AND 2019 is NA, there is a mistake in the data. replace 2019 with value of 2018
   mutate (bench_2019_num =  ifelse (bench_2018_num != 2 
@@ -316,7 +261,6 @@ mutate (bench_2018_num =  ifelse (!is.na(bench_2019_num)
   
   
   #create simple averages at the operation ID level and GLOBAL ID
-  
 
   mutate (bench_2013_ave = round (mean (bench_2013_num, na.rm=TRUE), 2)) %>%
   mutate (bench_2014_ave = round (mean (bench_2014_num, na.rm=TRUE), 2)) %>%
@@ -351,12 +295,8 @@ mutate (bench_2018_num =  ifelse (!is.na(bench_2019_num)
           value_2017,
           value_2018,
           `TI potential`,
-          #`CS start year`,
           `TI potential`,
           SOURCE) %>%
-  
-  #remove duplicables.
-  #distinct(`GLOBAL ID`, `Operation ID`, `Benchmark ID`, `ISO3`, .keep_all = T) %>%
   
   #group by Operation ID and GLOBAL ID
   group_by (`GLOBAL ID`, `Op Id`) %>%
@@ -392,13 +332,6 @@ df_cumm <- df %>%
   gather("year_bench", "value", 5:11) %>%
     
   left_join(CS_year) %>%
-    
-    
-  ########################################################
-  #test#
-  #filter (ISO3 == "ARM") %>%
-  #filter (`GLOBAL ID` == "INFRAQUALITY") %>%
-  ########################################################
   
   mutate (year = as.numeric(str_replace(year_bench, "value_", ""))) %>%
   
@@ -407,17 +340,6 @@ df_cumm <- df %>%
   
   #only keep benchmarks for the years that are > = to the CS
   filter (marker_year == 1) %>%
-  
-  ##select only variables of interest
-  #select (ISO3,
-  #      `Operation ID`,
-  #      `TI potential`,
-  #      `CS start year`,
-  #      SOURCE,
-  #      year,
-  #      value) %>%
-  
-  #unique () %>%
 
 #group by global ID and Operation ID
 group_by (`GLOBAL ID`, `Op Id`) %>%
@@ -475,18 +397,9 @@ df_final <- df %>%
   mutate (final_diff = final_score(score_diff)) %>%
   ungroup() %>%
   
-  
-  
   #remove all rows that have blank in GLOBAL ID
   filter (!is.na(`GLOBAL ID`)) %>%
-  
-  #mutate (cummulative_score = ifelse (`CS Start Year` == 2019 , 
-  #                                     final_diff, final_cum )) %>%
-  
-  #mutate (final_cum = ifelse (score_cum == 0 & score_diff < 0,
-  #                            final_diff, 
-  #                            final_cum)) %>%
-  
+
   #select variables of interest
   select (ISO3,
           `GLOBAL ID`,
@@ -503,8 +416,6 @@ df_final <- df %>%
     
   ##add TC data  
   bind_rows(TC_PO_Scoring) %>%
-  
-  ##add quantitative data
   
   #remove any duplicates and only keep one row per country
   distinct(`GLOBAL ID`, `ISO3`, .keep_all = T) %>%
@@ -532,18 +443,8 @@ df_final <- df %>%
 
 df_qual <- df_final %>% filter (!is.na (yeartoyear_score)) 
 
-df_missing <- df_final %>%
-  filter (is.na (yeartoyear_score))
-
-
 #save file 
 write.csv(df_qual, "qualitative/CSDR_qualitative.csv", row.names = FALSE)
-
-#save file 
-write.csv(df_missing, "qualitative/CSDR_qualitative_manual2.csv", row.names = FALSE)
-
-#message
-message("TIMS Data has been processed...")
 
 rm(list=ls())
 
